@@ -114,7 +114,8 @@ The proxy handles all the blockchain complexity: opening sessions, renewing befo
 | **ERC-8004 Agent Registry** | Discover agents on-chain — reads Identity + Reputation registries on Base, resolves registration files, checks trust signals (v0.7) |
 | **API Gateway Bootstrap** | One-command setup for community-powered Morpheus inference — no API key, no wallet, no node required. New users get instant AI access (v0.8) |
 | **Multi-Key Auth Rotation** | Configure multiple Venice API keys — OpenClaw rotates through them automatically when credits drain, keeping you on premium models longer (v0.9.1) |
-| **Gateway Guardian v4** | Billing-aware escalation — classifies errors (billing vs transient), skips useless restarts for credit exhaustion, notifies owner with DIEM reset ETA. Through-OpenClaw inference probes, circuit breaker, 4-stage self-healing, proactive credit monitoring (v0.9.3) |
+| **Gateway Guardian v5** | Direct curl inference probes — eliminates 71K prompt bloat and Signal spam. Billing-aware escalation, DIEM reset awareness, circuit breaker, 4-stage self-healing, proactive credit monitoring (v2026.2.21) |
+| **Three-Shift Task Planning** | Morning/Afternoon/Night shift system — proposes prioritized task plans with approval workflow, shift-specific rules, handoff notes (v2026.2.21) |
 | **MOR Swap Scripts** | Swap ETH or USDC for MOR tokens directly from the command line |
 
 **Benefit:** Your agent runs on inference you own — GLM-5 (Opus 4.5-level), GLM-4.7 Flash, Kimi K2.5, and 30+ open-source models via staked MOR tokens. No API bills, no credit limits — stake once, use forever. MOR tokens are staked, not consumed — returned when sessions close and restaked indefinitely. The open-source first model router (v0.9.8) sends all tiers to Morpheus by default — Claude is only the escape hatch for tasks GLM-5 can't handle. Cron jobs, heartbeats, research, coding, and complex reasoning all run on inference you own. The x402 client and agent registry (v0.7) let your agent discover and pay other agents on-chain. And with the API Gateway bootstrap (v0.8), new users get instant inference from their very first launch — no API key needed.
@@ -130,7 +131,7 @@ The proxy handles all the blockchain complexity: opening sessions, renewing befo
 
 **Benefit:** Your agent can discover other agents on-chain, verify their reputation, and pay them for services — all without custodial intermediaries. USDC payments are signed with EIP-712 and settled via the Coinbase facilitator. Budget controls prevent surprise spending.
 
-### 🛡️ Gateway Guardian v4 — Billing-Aware Self-Healing
+### 🛡️ Gateway Guardian v5 — Direct Probe Self-Healing
 | Component | What It Does |
 |-----------|-------------|
 | **Billing-Aware Escalation** | Classifies errors as `billing` vs `transient` vs `timeout`. Billing → backs off + notifies (restart is useless). Transient → restarts as before |
