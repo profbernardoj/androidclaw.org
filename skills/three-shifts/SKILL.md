@@ -34,7 +34,7 @@ shifts/
 
 ```markdown
 # Afternoon Shift — 2026-02-22
-Approved by: David | Approved at: 2:15 PM CST
+Approved by: owner | Approved at: 2:15 PM CST
 Shift window: 2:00 PM – 10:00 PM CST
 Cycles remaining: ~30
 
@@ -103,7 +103,7 @@ Next target: Step 1.2
   "status": "executing",
   "startedAt": "2026-02-22T20:00:00Z",
   "approvedAt": "2026-02-22T20:15:00Z",
-  "approvedBy": "David",
+  "approvedBy": "owner",
   "planModel": "venice/claude-opus-4-6",
   "execModel": "mor-gateway/glm-5",
   "totalSteps": 9,
@@ -223,7 +223,7 @@ When the user responds to a shift plan:
 
 **"Approve" / "Approve all":**
 1. Read `shifts/state.json` — confirm status is `awaiting_approval`
-2. Set `status` to `"executing"`, `approvedAt` to current ISO timestamp, `approvedBy` to `"David"`
+2. Set `status` to `"executing"`, `approvedAt` to current ISO timestamp, `approvedBy to "owner"`
 3. Write updated state.json
 4. The next cycle executor cron (every 15 min) will pick it up automatically
 
@@ -311,7 +311,7 @@ When a step is blocked:
 1. Mark it `[!]` with a clear reason
 2. Check if the block is:
    - **Dependency block** (step 3 needs step 2's output): Skip, will retry when step 2 clears
-   - **User block** (needs David's input): Note in handoff, skip
+   - **User block** (needs owner's input): Note in handoff, skip
    - **External block** (API down, service unavailable): Retry next cycle automatically
    - **Error block** (command failed): Log error in context.md, retry with different approach next cycle
 3. Move to the next available `[ ]` step
