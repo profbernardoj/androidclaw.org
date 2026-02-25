@@ -30,7 +30,7 @@ const WORKSPACE = process.env.OPENCLAW_WORKSPACE_DIR ||
   path.join(process.env.HOME, ".openclaw", "workspace");
 const FINANCE_MD = path.join(WORKSPACE, "memory", "Finance.md");
 const SNAPSHOT_DIR = path.join(WORKSPACE, "memory", "daily", "finance-snapshots");
-const TIMEZONE = "America/Chicago"; // Your timezone
+const TIMEZONE = "YOUR_TIMEZONE"; // Your timezone
 
 // Your holdings — use CoinGecko IDs as keys
 // Find IDs at: https://www.coingecko.com/en/coins/<id>

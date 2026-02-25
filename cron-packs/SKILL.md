@@ -92,7 +92,7 @@ All packs use these placeholders — replace before registering:
 
 | Placeholder | Example | Where Used |
 |-------------|---------|-----------|
-| `YOUR_TIMEZONE` | `America/Chicago` | All jobs |
+| `YOUR_TIMEZONE` | `YOUR_TIMEZONE` | All jobs |
 | `YOUR_PHONE` | `+1XXXXXXXXXX` | Jobs that send notifications |
 | `YOUR_CHANNEL` | `signal` | Messaging channel |
 | `YOUR_HEAVY_MODEL` | `claude-opus-4-6` | Planning jobs |

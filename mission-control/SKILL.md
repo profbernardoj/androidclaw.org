@@ -26,7 +26,7 @@ In `generate-data.mjs`, update the `CONFIG` object:
 ```javascript
 const CONFIG = {
   ownerName: "Your Name",
-  timezone: "America/Chicago",
+  timezone: "YOUR_TIMEZONE",
   // Goals are auto-discovered from memory/goals/*.md
 };
 ```

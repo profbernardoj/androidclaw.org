@@ -372,7 +372,7 @@ When all steps are `[x]`, `[-]`, or `[!]`, OR when the shift window expires:
 
 ```
 Name: three-shifts-plan-morning
-Schedule: cron 0 6 * * * (America/Chicago)
+Schedule: cron 0 6 * * * (YOUR_TIMEZONE)
 Model: venice/claude-opus-4-6
 Session: isolated
 Message: >
@@ -384,7 +384,7 @@ Message: >
   After approval, decompose all tasks into atomic GLM-5-sized steps and write to shifts/tasks.md.
 
 Name: three-shifts-plan-afternoon
-Schedule: cron 0 14 * * * (America/Chicago)
+Schedule: cron 0 14 * * * (YOUR_TIMEZONE)
 Model: venice/claude-opus-4-6
 Session: isolated
 Message: >
@@ -395,7 +395,7 @@ Message: >
   After approval, decompose all tasks into atomic GLM-5-sized steps and write to shifts/tasks.md.
 
 Name: three-shifts-plan-night
-Schedule: cron 0 22 * * * (America/Chicago)
+Schedule: cron 0 22 * * * (YOUR_TIMEZONE)
 Model: venice/claude-opus-4-6
 Session: isolated
 Message: >
@@ -412,7 +412,7 @@ Message: >
 
 ```
 Name: three-shifts-cycle
-Schedule: cron */15 * * * * (America/Chicago)
+Schedule: cron */15 * * * * (YOUR_TIMEZONE)
 Model: mor-gateway/glm-5
 Session: isolated
 Message: >

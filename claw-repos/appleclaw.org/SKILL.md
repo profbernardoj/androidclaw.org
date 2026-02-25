@@ -1198,7 +1198,7 @@ Set up a cron job that runs the archiver periodically. The script is a no-op whe
 ```json5
 {
   "name": "Smart session archiver",
-  "schedule": { "kind": "cron", "expr": "0 */6 * * *", "tz": "America/Chicago" },
+  "schedule": { "kind": "cron", "expr": "0 */6 * * *", "tz": "YOUR_TIMEZONE" },
   "sessionTarget": "isolated",
   "payload": {
     "kind": "agentTurn",
