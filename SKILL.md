@@ -1,7 +1,7 @@
 ---
 name: everclaw
-version: 2026.2.23
-description: Open-source first AI inference — GLM-5 as default, Claude as fallback only. Own your inference forever via the Morpheus decentralized network. Stake MOR tokens, access GLM-5, GLM-4.7 Flash, Kimi K2.5, and 30+ models with persistent inference by recycling staked MOR. Open-source first model router routes all tiers to Morpheus by default — Claude only kicks in as an escape hatch when needed. Includes Morpheus API Gateway bootstrap for zero-config startup, OpenAI-compatible proxy with auto-session management, automatic retry with fresh sessions, OpenAI-compatible error classification to prevent cooldown cascades, multi-key auth rotation v2 with proactive DIEM balance monitoring and reactive 402 watchdog, Gateway Guardian v5 with direct curl inference probes (eliminates Signal spam), proactive Venice DIEM credit monitoring, circuit breaker for stuck sub-agents, nuclear self-healing restart, always-on proxy-router with launchd auto-restart, smart session archiver, three-shift cyclic execution engine (v2 with 15-minute execution loops), 24/7 always-on power configuration for macOS, bundled security skills, zero-dependency wallet management via macOS Keychain, x402 payment client for agent-to-agent USDC payments, and ERC-8004 agent registry reader for discovering trustless agents on Base.
+version: 0.9.8.3
+description: Open-source first AI inference — GLM-5 as default, Claude as fallback only. Own your inference forever via the Morpheus decentralized network. Stake MOR tokens, access GLM-5, GLM-4.7 Flash, Kimi K2.5, and 30+ models with persistent inference by recycling staked MOR. Open-source first model router routes all tiers to Morpheus by default — Claude only kicks in as an escape hatch when needed. Includes Morpheus API Gateway bootstrap for zero-config startup, OpenAI-compatible proxy with auto-session management, automatic retry with fresh sessions, OpenAI-compatible error classification to prevent cooldown cascades, multi-key auth profile rotation for Venice API keys, Gateway Guardian v4 with billing-aware escalation, through-OpenClaw inference probes, proactive Venice DIEM credit monitoring, circuit breaker for stuck sub-agents, and nuclear self-healing restart, always-on proxy-router with launchd auto-restart, smart session archiver to prevent dashboard overload, bundled security skills, zero-dependency wallet management via macOS Keychain, x402 payment client for agent-to-agent USDC payments, and ERC-8004 agent registry reader for discovering trustless agents on Base.
 homepage: https://everclaw.com
 metadata:
   openclaw:
@@ -61,7 +61,28 @@ metadata:
     install:
       method: "git clone (recommended) or clawhub install everclaw-inference"
       note: "curl | bash installer available but users should review scripts before executing. All scripts are open source at github.com/profbernardoj/everclaw."
-    tags: ["inference", "everclaw", "morpheus", "mor", "decentralized", "ai", "blockchain", "base", "persistent", "fallback", "guardian", "security", "three-shifts", "task-planning"]
+    tags: ["inference", "everclaw", "morpheus", "mor", "decentralized", "ai", "blockchain", "base", "persistent", "fallback", "guardian", "security", "android", "termux"]
+dependencies:
+  clawhub:
+    - slug: everclaw-inference
+      aliases: ["everclaw"]
+      required: true
+      description: "Core EverClaw inference skill — Morpheus decentralized AI"
+    - slug: skillguard
+      required: true
+      description: "Security scanner for skill packages"
+    - slug: prompt-guard
+      required: true
+      description: "Prompt injection defense"
+  github:
+    - repo: profbernardoj/everclaw
+      path: skills/pii-guard
+      required: true
+      description: "PII leak prevention"
+    - repo: profbernardoj/everclaw
+      path: skills/three-shifts
+      required: false
+      description: "Cyclic shift execution engine"
 ---
 
 <!-- ─── AGENT INSTRUCTIONS (read by OpenClaw agents) ─────────────── -->
@@ -120,7 +141,7 @@ node ~/.openclaw/workspace/skills/everclaw/scripts/setup.mjs --key <API_KEY> --a
 
 Open-source first. GLM-5 handles everything — Claude is the escape hatch, not the default. Access GLM-5, GLM-4.7 Flash, Kimi K2.5, and 30+ models with inference you own. Everclaw connects your OpenClaw agent to the Morpheus P2P network — stake MOR tokens, open sessions, and recycle your stake for persistent, self-sovereign access to AI.
 
-> 📦 **ClawHub:** `clawhub install everclaw-inference` — [clawhub.ai/EverClaw/everclaw-inference](https://clawhub.ai/EverClaw/everclaw-inference)
+> 📦 **ClawHub:** `clawhub install everclaw-inference` — [clawhub.ai/DavidAJohnston/everclaw-inference](https://clawhub.ai/DavidAJohnston/everclaw-inference)
 >
 > ⚠️ **Name Collision Warning:** A different product ("Everclaw Vault") uses the bare `everclaw` slug on ClawHub. **Always use `everclaw-inference`** — never `clawhub install everclaw` or `clawhub update everclaw`. See `CLAWHUB_WARNING.md` for details.
 
@@ -1021,71 +1042,9 @@ morpheus/kimi-k2.5 (owned, staked MOR) → mor-gateway/kimi-k2.5 (community gate
 
 **v0.5 improvement:** The Morpheus proxy returns `"server_error"` type errors (not billing errors), so OpenClaw won't put the Morpheus provider into extended cooldown due to transient infrastructure issues. If a Morpheus session expires mid-request, the proxy automatically opens a fresh session and retries once.
 
-### Venice Key Health Monitor (v2.0)
-
-OpenClaw's billing error detection has pattern gaps with Venice-specific error messages. Two known gaps:
-
-1. **Balance depletion:** Venice returns `"Insufficient USD or Diem balance to complete request"` but OpenClaw checks for `"insufficient balance"` (adjacent words). Since "USD or Diem" separates "insufficient" from "balance", the pattern fails.
-2. **Per-key spend limit:** Venice returns `"API key DIEM spend limit exceeded. Your account may still have DIEM balance, but this API key has reached its configured DIEM spending limit."` — OpenClaw has no pattern for "spend limit" at all.
-
-Both get classified as `"unknown"` instead of `"billing"`, the key gets a 60-second cooldown instead of a billing disable, and the same exhausted key gets retried in a loop.
-
-**Two scripts fix this at the skill level:**
-
-#### 1. Proactive Key Health Monitor (`venice-key-monitor.sh`)
-
-Periodically probes every Venice API key's DIEM/USD balance via a cheap GLM-4.7-Flash inference call (costs ~0.0001 DIEM). Reads the `x-venice-balance-diem` or `x-venice-balance-usd` response header and disables depleted keys by writing `disabledUntil` + `disabledReason: "billing"` directly to `auth-profiles.json`.
-
-```bash
-# Check all keys and disable depleted ones
-bash skills/everclaw/scripts/venice-key-monitor.sh
-
-# Report balances without making changes
-bash skills/everclaw/scripts/venice-key-monitor.sh --status
-
-# Custom depletion threshold (default: 1 DIEM)
-bash skills/everclaw/scripts/venice-key-monitor.sh --threshold 5
-```
-
-**Cron:** Runs every 2 hours. Pre-empts the problem before the agent ever tries an empty key.
-
-#### 2. Reactive 402 Watchdog (`venice-402-watchdog.sh`)
-
-Monitors `auth-profiles.json` for Venice keys with rapid failures that aren't properly billing-disabled (the telltale sign of OpenClaw's pattern gap). When detected, immediately disables the offending key and identifies the next healthy key.
-
-```bash
-# One-shot scan (check recent failures)
-bash skills/everclaw/scripts/venice-402-watchdog.sh
-
-# Run as daemon (continuous monitoring every 30s)
-bash skills/everclaw/scripts/venice-402-watchdog.sh --daemon
-```
-
-**Cron:** Runs every 5 minutes. Catches billing errors in near-real-time that the proactive monitor might miss between its 2-hour checks.
-
-#### Detection Patterns (what OpenClaw misses)
-
-| Venice Error | OpenClaw Pattern | Match? |
-|-------------|-----------------|--------|
-| `Insufficient USD or Diem balance to complete request` | `"insufficient balance"` | ❌ No — words not adjacent |
-| `API key DIEM spend limit exceeded` | *(none)* | ❌ No pattern exists |
-| `402 Payment Required` | `/status.*402/` | ✅ Only if status code preserved |
-| `Insufficient credits` | `"insufficient credits"` | ✅ |
-
-The watchdog catches the first two patterns (the most common Venice billing errors) that OpenClaw's text matching misses.
-
-#### State Files
-
-| File | Purpose |
-|------|---------|
-| `~/.openclaw/logs/venice-key-balances.json` | Last balance check results per key |
-| `~/.openclaw/logs/venice-402-state.json` | Last watchdog action and rotation state |
-| `~/.openclaw/logs/venice-key-monitor.log` | Monitor activity log |
-| `~/.openclaw/logs/venice-402-watchdog.log` | Watchdog activity log |
-
 ---
 
-## 14. Gateway Guardian v5 (v2026.2.21)
+## 14. Gateway Guardian v4 (v0.9.3)
 
 A self-healing, billing-aware watchdog that monitors the OpenClaw gateway and its ability to run inference. Runs every 2 minutes via launchd.
 
@@ -1096,16 +1055,9 @@ A self-healing, billing-aware watchdog that monitors the OpenClaw gateway and it
 | v1 | HTTP dashboard alive | Providers in cooldown = brain-dead but HTTP 200 |
 | v2 | Raw provider URLs | Provider APIs always return 200 regardless of internal state |
 | v3 | Through-OpenClaw inference probe | Billing exhaustion → restart → instant re-disable = dead loop. Also: `set -e` + pkill self-kill = silent no-op restarts |
-| v4 | Through-OpenClaw + billing classification + credit monitoring | `openclaw agent` injected 71K workspace prompt into every probe |
-| **v5** | **Direct curl inference probes** + billing classification + credit monitoring | Current version |
+| **v4** | Through-OpenClaw + **billing classification** + **credit monitoring** | Current version |
 
-### What v5 Fixes Over v4
-
-**Root cause:** `openclaw agent` injected the full 71K workspace system prompt into every health probe. This caused mor-gateway/glm-5 to timeout at 60s (takes ~37s just for the prompt). Worse, failures were delivered to Signal as normal agent replies — spamming the user with error messages.
-
-**Fix:** Direct curl to gateway's LiteLLM proxy with a tiny prompt (~50 chars). Uses glm-4.7-flash (fast, lightweight) instead of glm-5. No agent session = no Signal delivery on failure. Errors stay in logs only.
-
-### What v4 Fixed Over v3
+### What v4 Fixes Over v3
 
 1. **Billing-aware escalation** — Classifies inference errors as `billing` vs `transient` vs `timeout`. Billing errors trigger backoff + notification instead of useless restarts.
 2. **Silent restart bug** — Replaced `set -euo pipefail` with `set -uo pipefail` + explicit ERR trap. Restart failures are now logged instead of silently exiting.
@@ -1189,7 +1141,7 @@ tail -f ~/.openclaw/logs/guardian.log
 | `MAX_STUCK_DURATION_SEC` | `1800` | Circuit breaker: kill sub-agents stuck >30 min |
 | `STUCK_CHECK_INTERVAL` | `300` | Circuit breaker check interval (5 min) |
 | `OWNER_SIGNAL` | `+1XXXXXXXXXX` | Signal number for notifications |
-| `SIGNAL_ACCOUNT` | `+1XXXXXXXXXX` | Signal sender account |
+| `SIGNAL_ACCOUNT` | `+15129488566` | Signal sender account |
 
 ### State Files
 
@@ -1267,7 +1219,7 @@ Set up a cron job that runs the archiver periodically. The script is a no-op whe
 ```json5
 {
   "name": "Smart session archiver",
-  "schedule": { "kind": "cron", "expr": "0 */6 * * *", "tz": "YOUR_TIMEZONE" },
+  "schedule": { "kind": "cron", "expr": "0 */6 * * *", "tz": "America/Chicago" },
   "sessionTarget": "isolated",
   "payload": {
     "kind": "agentTurn",
@@ -1507,7 +1459,7 @@ if (agent.x402Support && apiEndpoint) {
 
 ---
 
-## Quick Reference (v2026.2.23)
+## Quick Reference (v0.9.4)
 
 | Action | Command |
 |--------|---------|
@@ -1528,9 +1480,6 @@ if (agent.x402Support && apiEndpoint) {
 | Proxy health | `curl http://127.0.0.1:8083/health` |
 | Guardian test | `bash scripts/gateway-guardian.sh --verbose` |
 | Guardian logs | `tail -f ~/.openclaw/logs/guardian.log` |
-| **Venice key health** | `bash skills/everclaw/scripts/venice-key-monitor.sh --status` |
-| **Venice key balances** | `bash skills/everclaw/scripts/venice-key-monitor.sh --verbose` |
-| **Venice 402 watchdog** | `bash skills/everclaw/scripts/venice-402-watchdog.sh --verbose` |
 | Archive sessions | `bash skills/everclaw/scripts/session-archive.sh` |
 | Check session size | `bash skills/everclaw/scripts/session-archive.sh --check` |
 | Force archive | `bash skills/everclaw/scripts/session-archive.sh --force` |
@@ -1914,160 +1863,6 @@ venice/claude-opus-4-6      # Primary (premium)
 ```
 
 For new users without Venice or a local proxy, the gateway is the **first and only** provider — making it the critical bootstrap path.
-
----
-
-## 20. Always-On Setup for 24/7 Operation (v0.9.9)
-
-Your agent needs your Mac to stay awake. macOS defaults to sleep after inactivity, which interrupts cron jobs, heartbeats, and long-running tasks. Everclaw includes an always-on setup script that configures power management for continuous operation.
-
-### Quick Setup
-
-```bash
-# Configure macOS to never sleep (requires sudo)
-sudo bash skills/everclaw/scripts/always-on.sh
-
-# Restore default power settings
-sudo bash skills/everclaw/scripts/always-on.sh --restore
-```
-
-### What It Does
-
-The script configures macOS power management for 24/7 operation:
-
-| Setting | Value | Purpose |
-|---------|-------|---------|
-| `disablesleep` | 1 | System never sleeps |
-| `standby` | 0 | No hibernation |
-| `autopoweroff` | 0 | No deep sleep |
-| `powernap` | 1 | Network activity while display off |
-| `womp` | 1 | Wake on LAN enabled (remote access) |
-| `autorestart` | 1 | Auto-restart after power failure |
-| `tcpkeepalive` | 1 | Keep network connections alive |
-| `disksleep` | 0 | Never spin down disks |
-
-### LaunchAgent for Caffeinate
-
-The script also installs a LaunchAgent (`com.everclaw.alwayson`) that runs `caffeinate -i -d -s` in the background, providing an additional layer of protection against system sleep:
-
-- `-i` — Prevent system from idling to sleep
-- `-d` — Prevent display from sleeping
-- `-s` — Prevent system from sleeping when on AC power
-
-### Verify It's Working
-
-```bash
-# Check current power settings
-pmset -g
-
-# Should show:
-# SleepDisabled    1
-# standby          0
-# autorestart      1
-```
-
-### Why This Matters for Agents
-
-Without always-on configuration:
-- Cron jobs don't fire while sleeping
-- Heartbeats miss their schedule
-- Long-running tasks (file transfers, backups) fail
-- Your agent appears "offline" to other agents/users
-
-With always-on:
-- Cron jobs fire on schedule
-- Heartbeats run every 30 minutes like clockwork
-- Long tasks complete uninterrupted
-- Your agent is reachable 24/7
-
-### Power Consumption
-
-A Mac Mini M4 at idle with sleep disabled draws ~6-10W. That's roughly:
-- **$0.50-1.00/month** at $0.12/kWh
-- **Negligible** compared to AI inference costs
-
-### Alternatives for Other Platforms
-
-**Linux:**
-```bash
-sudo systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
-```
-
-**Headless Raspberry Pi:**
-No sleep by default. Ensure `systemd` services are enabled for OpenClaw and Morpheus.
-
-### Troubleshooting
-
-**Mac still sleeps:**
-1. Check `pmset -g assertions` for any processes preventing sleep
-2. Verify LaunchAgent is loaded: `launchctl list | grep everclaw`
-3. Check Energy Saver settings in System Settings aren't overriding pmset
-
-**Display still sleeps:**
-This is fine — the system stays awake even with display off thanks to Power Nap. To disable display sleep entirely:
-```bash
-sudo pmset -a displaysleep 0
-```
-
----
-
-## 21. Three-Shift Task Planning (v2026.2.21)
-
-A structured task planning system that proposes prioritized work plans at the start of each 8-hour shift. Nothing executes without user approval.
-
-### Shifts
-
-| Shift | Default Time | Window | Character |
-|-------|-------------|--------|-----------|
-| ☀️ Morning | 6:00 AM | 6 AM – 2 PM | Ramp-up: meetings, comms, decisions |
-| 🌤️ Afternoon | 2:00 PM | 2 PM – 10 PM | Deep work: coding, writing, building |
-| 🌙 Night | 10:00 PM | 10 PM – 6 AM | Autonomous: research, maintenance |
-
-### How It Works
-
-1. **Gather context** — Reads memory files, calendar, email, git status, previous shift handoff
-2. **Generate plan** — Prioritized tasks (P1 must-do, P2 should-do, P3 could-do), active project status, blocked items
-3. **Present for approval** — User approves, modifies, or skips before anything executes
-4. **Execute** — Works through approved tasks in priority order, logs progress
-5. **Handoff** — Writes shift summary for the next shift to pick up
-
-### Setup
-
-```bash
-# Create three cron jobs (adjust times to your timezone)
-openclaw cron add --name three-shifts-morning --schedule "0 6 * * *" \
-  --message "Generate morning shift plan. Read the three-shifts skill, gather context, and propose tasks for the 6 AM – 2 PM window."
-
-openclaw cron add --name three-shifts-afternoon --schedule "0 14 * * *" \
-  --message "Generate afternoon shift plan. Read the three-shifts skill, gather context, and propose tasks for the 2 PM – 10 PM window."
-
-openclaw cron add --name three-shifts-night --schedule "0 22 * * *" \
-  --message "Generate night shift plan. Read the three-shifts skill, gather context, and propose tasks for the 10 PM – 6 AM window."
-```
-
-### Shift-Specific Rules
-
-- **Morning/Afternoon:** External actions (emails, PRs, messages) allowed with approval
-- **Night:** Autonomous only — no external comms, no financial transactions, no destructive ops
-- **Night cancellation:** If user doesn't approve by 10:30 PM, night shift is cancelled
-
-See `three-shifts/SKILL.md` for full documentation including approval workflows, configuration options, weekend behavior, and quiet hours.
-
----
-
-## Changelog
-
-### 2026.2.21
-- **Three-Shift Task Planning** — Morning/Afternoon/Night shift system with prioritized task proposals and approval workflow
-- **Gateway Guardian v5** — Direct curl inference probes replace `openclaw agent` probes. Eliminates 71K workspace prompt injection into health checks, prevents Signal spam from failed probes, uses glm-4.7-flash for fast lightweight probing
-- **Version scheme change** — Moved from semver (0.9.x) to date-based versioning (YYYY.M.DD)
-
-### 0.9.9
-- Always-on 24/7 power configuration for macOS
-- GLM-5 as default model (replaces Kimi K2.5)
-
-### 0.9.8.3
-- Community contributions (dynamic model discovery, install.sh fixes, bash 3.2 compat, agent integration docs)
 
 ---
 
